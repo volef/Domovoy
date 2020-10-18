@@ -79,12 +79,10 @@ namespace backend.Controllers
         /// <remarks>
         /// Пример запроса:
         ///
-        ///     POST /create
+        ///     GET /getInviteLink
         ///     {
-        ///          "name": "string",
-        ///          "lat": 0,
-        ///          "long": 0,
-        ///          "adress": "string"
+        ///          "id": 5,
+        ///          "reset": false
         ///     }
         ///
         /// </remarks>
@@ -112,7 +110,50 @@ namespace backend.Controllers
             }
 
             var link = response.Value<string>("link");
-            return StatusCode(200, link);
+            return Ok(link);
+        }
+        
+        /// <summary>
+        /// Переименовать беседу
+        /// </summary>
+        /// <param name="id">Id беседы</param>
+        /// <param name="newname">Новое название беседы</param>
+        /// <remarks>
+        /// Пример запроса:
+        ///
+        ///     POST /rename
+        ///     {
+        ///          "id": 5,
+        ///          "newname": "string"
+        ///     }
+        ///
+        /// </remarks>
+        /// <returns>Ничего не вернет (см статускод запроса)</returns>
+        /// <response code="200">Все ок</response>
+        /// <response code="400">Пустое название</response>
+        /// <response code="404">Ошибка от апи вк</response>
+        /// <response code="406">Ошибка выполнения запроса на апи вк</response> 
+        [HttpPost]
+        [Route("[controller]/rename")]
+        public async Task<IActionResult> Rename(int id, string newname)
+        {
+            if (string.IsNullOrEmpty(newname))
+                return BadRequest();
+            var @params = new Dictionary<string, string>
+            {
+                {"chat_id", id.ToString()},
+                {"title", newname}
+            };
+            var result = await _api.CallAsync("messages.editChat", @params);
+            if (result == null)
+                return StatusCode(406);
+            if (!result.TryGetValue("response", out var response))
+            {
+                var error = result.GetValue("error");
+                _logger.LogError(error.ToString());
+                return NotFound(error["error_msg"].Value<string>());
+            }
+            return Ok();
         }
 
         /// <summary>
@@ -122,12 +163,9 @@ namespace backend.Controllers
         /// <remarks>
         /// Пример запроса:
         ///
-        ///     POST /create
+        ///     POST /getByAdress
         ///     {
-        ///          "name": "string",
-        ///          "lat": 0,
-        ///          "long": 0,
-        ///          "adress": "string"
+        ///          "adress": "тутуево 5",
         ///     }
         ///
         /// </remarks>

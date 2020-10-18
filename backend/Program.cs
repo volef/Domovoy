@@ -19,10 +19,11 @@ namespace backend
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
                 }
-                catch (Exception e)
+                catch
                 {
                     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(e, "DBContext init error");
+                    logger.LogError("DBContext init error");
+                    throw;
                 }
             }
 
